@@ -1,0 +1,92 @@
+---
+title: "Advance Data Mining - Linear Regression"
+author: "Srushti Padade"
+date: "February 25, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Problem Statement
+
+SafeBabies is a large company who is producing car seats for babies and toddlers. They sell their products all over the US and abroad. The management team has hired you as a Business Analytics consultant to help them maximizing their profit.
+
+Your primary task is to determine:
+  1-	the optimal price for selling the car seats at those stores where the shelve location is good (i.e. the product is highly visible)?
+  2-	the optimal price for selling the car seats at those stores where the shelve location is bad (i.e. the product is highly visible)?
+
+You have been told that the cost of producing each car seat is $55.0 
+
+  1-	Plot the optimal price for selling the car seats at those stores where the shelve location is good and those where the shelve location is bad when varying the production costs from $40 to $85.
+  
+#Solution:
+
+The libraries loaded for solving the problem.
+```{r}
+library(ISLR)
+library(dplyr)
+library(ggplot2)
+```
+
+Loading the Carseats dataset with only 3 variables.
+Filtering the data into two subsets based on the shelve location(GOOD or BAD).
+
+```{r}
+SafeBabies <- Carseats %>% select("Sales", "Price", "ShelveLoc")
+
+Shelve_Good <- filter(SafeBabies, ShelveLoc == "Good")
+Shelve_Bad <- filter(SafeBabies, ShelveLoc == "Bad")
+```
+
+Building a Linear Regression model to predict the sales of the carseat for both good as well as bad shelve location individually.
+
+```{r}
+#Linear Model for GOOD Shelve location
+Model_Good <- lm(Sales ~ Price, data = Shelve_Good)
+summary(Model_Good)
+
+#Linear Model for BAD Shelve location
+Model_Bad <- lm(Sales ~ Price, data = Shelve_Bad)
+summary(Model_Bad)
+```
+
+#Equation:
+Total Profit = Sales * (Selling Price - Production Cost)
+
+Futher simplication of equation we got the below formula,
+
+Optimal Selling Price = Predicted Sales based on Production Cost / (2 * Estimated Price Coefficient)
+
+Assuming the Production Cost of a CarSeat is $55.0, below is the predicted optimal Selling Price of the Carseat.
+
+```{r}
+Optimal_GoodPrice <- predict(Model_Good, data.frame(Price = 55.0)) / (-2*Model_Good$coefficients[2])
+print(paste0("The Optimal price for Good shelve location can be $", Optimal_GoodPrice))
+
+Optimal_BadPrice <- predict(Model_Bad, data.frame(Price = 55.0)) / (-2*Model_Bad$coefficients[2])
+print(paste0("The Optimal price for Bad shelve location can be $",Optimal_BadPrice))
+```
+Note: the negative sign is introduced in denominator to nullify the negation, as sign the LM represents the negative correlation of Price with the intercept(Sales).
+
+Here the variation in Production Cost from $40 to $85 the Selling Price also varies as below.
+
+```{r}
+Optimal_GoodPriceRange <- (predict(Model_Good, data.frame(Price = c(40:85)))) / (-2*Model_Good$coefficients[2])
+
+Optimal_BadPriceRange <- (predict(Model_Bad, data.frame(Price = c(40:85)))) / (-2*Model_Bad$coefficients[2])
+```
+
+Selling Price for Good and Bad Shelve locations over Production Cost between $40 - $85
+
+```{r}
+PriceRange<- cbind.data.frame(Production_Cost = c(40:85), Selling_Price_Good = Optimal_GoodPriceRange, Selling_Price_Bad = Optimal_BadPriceRange)
+PriceRange
+```
+
+The variations of Price for both good and bad shelve locations is represented graphically below.
+
+```{r}
+ggplot(PriceRange, aes(Production_Cost, Price_Range)) + geom_line(aes(y = Optimal_GoodPriceRange, col = "Good Shelve")) + geom_line(aes(y = Optimal_BadPriceRange, col = "Bad Shelve"))
+```
