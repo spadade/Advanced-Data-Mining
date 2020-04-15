@@ -1,0 +1,106 @@
+---
+title: "Data Mining - Random Forest"
+author: "Srushti Padade"
+date: "April 9, 2020"
+output: html_document
+---
+
+#Problem Statement:
+
+Build a random forest classification model to predict the type of a breast tumor (benign or malignant).
+
+a)	 Try examine the following values for the mtry variable 2 6 8
+b)	Show the confusion matrix of predictions on the test data (in the above example, I have the raw (class) predictions. You need to compare them with the ground truth values (i.e. testing$Class).
+
+The library "mlbench" have the BreastCancer Dataset. The inbuild libraries like caret and randomforest are also used for the solution.
+
+Here we are using Random Forest Classification method.
+
+Random forests or random decision forests are an ensemble learning method for classification, regression and other tasks that operate by constructing a multitude of decision trees at training time and outputting the class that is the mode of the classes or mean prediction of the individual trees. Random forests are bagged decision tree models that split on a subset of features on each split.
+
+```{r}
+library(mlbench)
+library(caret)
+library(randomForest)
+```
+
+A data frame with 699 observations on 11 variables, one being a character variable, 9 being ordered or nominal, and 1 target class.
+
+```{r}
+data(BreastCancer) 
+
+levels(BreastCancer$Class)
+```
+
+The seed is set to 2 and the missing data is manipulated using the na.roughfix() function.
+Here we have also converted ID parameter from char to numeric and factorized our target variable for further computation.
+
+```{r}
+set.seed(2)
+
+BreastCancer$Class <- as.factor(BreastCancer$Class)
+BreastCancer$Id <- as.numeric(BreastCancer$Id)
+
+str(BreastCancer)
+
+BreastCancer <- na.roughfix(BreastCancer)
+```
+
+The dataset is partitioned in 70% Training data and 30% Testing data.
+
+```{r}
+intrain <- createDataPartition(y = BreastCancer$Class, p = 0.7, list = FALSE)
+training <-BreastCancer[intrain,]
+
+testing <- BreastCancer[-intrain,]
+
+dim(training)
+dim(testing)
+```
+
+The random forest model is executed on the entire training data.
+NOTE: Here we have ignored the ID variable for training as it do not specify any important information.
+
+```{r}
+rf.model<-train(Class~.,data=training[-1],method='rf')
+rf.model
+```
+
+The Model developed from the training data is used to predict the outcome of the Testing data where the Tumor Class will be predicted.
+
+```{r}
+pred_class_raw <-predict(rf.model,testing[-1],type="raw")
+
+table(pred_class_raw, testing$Class)
+```
+
+The above table is a confusion matrix for the prediction where we can see the accuracy of 96.17%.
+
+Similarly, to examine the mtry variable the grid is assigned to 2, 6, 8 and the random forest model is executed again.
+
+```{r}
+Grid_Serach <- expand.grid(.mtry=c(2,6,8))
+
+rf.model2<-train(Class~., data=training[-1], method='rf', tuneGrid=Grid_Serach)
+rf.model2
+```
+
+Again, the Model developed from the training data is used to predict the outcome of the Testing data where the Tumor Class will be predicted.
+
+Below we have predicted the probabtistic value of the Class on testing data 
+
+```{r}
+probs <-predict(rf.model2,testing[-1], type="prob")
+head(probs)
+```
+
+The raw output is predicted for the testing data and then computed the confusion matrix.
+
+```{r}
+pred_class <-predict(rf.model2,testing[-1], type="raw")
+head(pred_class)
+
+table(pred_class, testing$Class)
+```
+
+We have observed that the accuracy of the testing data is 97.12 %.

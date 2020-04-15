@@ -1,0 +1,102 @@
+---
+title: "Data Mining - SVM"
+author: "Srushti Padade"
+date: "April 14, 2020"
+output: html_document
+---
+
+#Problem Statement:
+
+Build a Support Vector Machine models. The objective of the support vector machine algorithm is to find a hyperplane in an N-dimensional space that distinctly classifies the data points, here is to predict the type of a breast tumor (benign or malignant).
+
+a)	 Try examine the following values for the C parameter 1,2.5, 6.25
+b)	Show the confusion matrix of predictions on the test data (in the above example, I have the raw (class) predictions. You need to compare them with the ground truth values (i.e. testing$Class). 
+
+The library "mlbench" have the BreastCancer Dataset. The inbuild libraries like caret and kernlab are also used for the solution.
+
+```{r}
+library(mlbench)
+library(caret)
+library(kernlab)
+
+options(warn=-1)
+```
+
+A data frame with 699 observations on 11 variables, one being a character variable, 9 being ordered or nominal, and 1 target class.
+
+```{r}
+data(BreastCancer) 
+
+levels(BreastCancer$Class)
+```
+
+The seed is set to 2 and the missing data is manipulated by complete.case(using the na.roughfix() function).
+Here we have also converted ID parameter from char to numeric and factorized our target variable for further computation.
+
+```{r}
+set.seed(2)
+
+BreastCancer$Class <- as.factor(BreastCancer$Class)
+BreastCancer$Id <- as.numeric(BreastCancer$Id)
+
+str(BreastCancer)
+
+#BreastCancer <- na.roughfix(BreastCancer)
+BreastCancer <- BreastCancer[complete.cases(BreastCancer),]
+```
+
+The dataset is partitioned in 70% Training data and 30% Testing data.
+
+```{r}
+intrain <- createDataPartition(y = BreastCancer$Class, p = 0.7, list = FALSE)
+training <-BreastCancer[intrain,]
+
+testing <- BreastCancer[-intrain,]
+
+dim(training)
+dim(testing)
+```
+
+The SVM is executed on the entire training data.
+NOTE: Here we have ignored the ID variable for training as it do not specify any important information.
+
+```{r}
+svm.model<-train(Class~.,data=training[-1], method='svmLinear')
+svm.model
+```
+
+The Model developed from the training data is used to predict the outcome of the Testing data where the Tumor Class will be predicted.
+
+```{r}
+pred_class_raw <-predict(svm.model, testing[-1],type="raw")
+
+table(pred_class_raw, testing$Class)
+```
+
+The above table is a confusion matrix for the prediction where we can see the accuracy of 95.59%.
+
+Similarly, to examine the mtry variable the grid is assigned to 21, 2.5, 6.25 and the SVM is executed again.
+
+```{r}
+Grid_Serach <- expand.grid(.C=c(1,2.5,6.25))
+
+svm.model2<-train(Class~.,
+                  data=training[-1],
+                  method='svmLinear',
+                  tuneGrid=Grid_Serach)
+
+svm.model2
+```
+
+Again, the Model developed from the training data is used to predict the outcome of the Testing data where the Tumor Class will be predicted.
+
+The raw output is predicted for the testing data and then computed the confusion matrix.
+
+```{r}
+pred_class <-predict(svm.model2,testing[-1], type="raw")
+head(pred_class)
+
+table(pred_class, testing$Class)
+```
+
+We have observed that the accuracy of the testing data is 95.59 %.
