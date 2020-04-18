@@ -1,0 +1,76 @@
+---
+title: "Data Mining - Market Basket Analysis"
+author: "Srushti Padade"
+date: "April 13, 2020"
+output: html_document
+---
+
+#Problem Statement
+
+Analyse the Market to know the Groceries Purchase analysis.
+
+Below are the libraries used to perform the market basket analysis on Groceries dataset.
+
+```{r}
+library(dplyr)
+library(arules)
+library(arulesViz)
+library(plyr)
+options(warn = 1)
+```
+
+Loading the dataset and checking the summary of the data.
+
+```{r}
+df_groceries <- read.csv("groceries_v2.csv")
+head(df_groceries)
+summary(df_groceries)
+```
+
+Since the data is transactional type we need to extract the transactions from the dataset of the basket type.
+
+```{r}
+transaction_data = read.transactions(file = "groceries_v2.csv", format = "basket", sep = ",")
+```
+
+The data is converted into the set of items in each transaction.
+
+```{r}
+Trans <- as(transaction_data, "transactions")
+inspect(Trans[1:5])
+```
+
+Here we can inspect the transactions with the set of similar items purchased.
+
+```{r}
+Trans_ID <- as(transaction_data, "tidLists")
+inspect(Trans_ID[1:5])
+```
+
+Apriori is an algorithm for frequent item set mining and association rule learning over relational databases. It proceeds by identifying the frequent individual items in the database and extending them to larger and larger item sets as long as those item sets appear sufficiently often in the database. The frequent item sets determined by Apriori can be used to determine association rules which highlight general trends in the database: this has applications in domains such as market basket analysis.
+
+Here we are having Support = 0.01 and Confidence = 0.5.
+
+```{r}
+Association_rules <- apriori(transaction_data, parameter = list(sup = 0.01, conf = 0.5, target="rules"))
+summary(Association_rules)
+```
+
+Since the algorithm have do not have sorted association rules, thus below we have sorted the rules based on confidence. 
+
+```{r}
+Association_rules_Sorted <- sort(Association_rules, by='confidence', decreasing = TRUE)
+summary(Association_rules_Sorted)
+```
+
+The Association rules with there supportand cofidence are as below.
+
+```{r}
+inspect(Association_rules_Sorted)
+```
+
+The Market groceries analysis is seen in the below plot.
+
+```{r}
+plot(Association_rules_Sorted, method="graph", control=list(type="items"))
+```
